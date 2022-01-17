@@ -32,6 +32,7 @@ export default async function deployApi(
   const {
     // The spawner persistently runs scripts within ag-solo, off-chain.
     spawner,
+    chainTimerService,
   } = home;
 
   console.info('Please allow our unsafe plugins to enable Akash connection');
@@ -50,5 +51,8 @@ export default async function deployApi(
   // Spawn the function
   await E(installation).spawn({
     akashClient,
+    timeAuthority: chainTimerService,
+    checkInterval: 15n,
+    deploymentId: '1232',
   });
 }

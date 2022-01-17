@@ -33,13 +33,12 @@ export const bootPlugin = () => {
      * @returns {AkashClient}
      */
     async start(_opts) {
-      console.log('======== Starting Akash client ==========');
       let akash = null;
       let address = null;
 
       const initialize = async () => {
         if (akash) {
-          console.warn('Client was initialized, ignoring...');
+          console.warn('Client initialized, ignoring...');
           return;
         }
         const mnemonic = _opts.mnemonic || DEFAULT_MNEMONIC;
@@ -54,10 +53,17 @@ export const bootPlugin = () => {
           assert(akash, 'Client need to be initalized');
           return akash.query.bank.balance(address, 'uakt');
         },
-        async deployments() {
+        async getDeploymentList() {
           assert(akash, 'Client need to be initalized');
           return akash.query.deployment.list.params({
             owner: address,
+          });
+        },
+        async getDeploymentDetail(dseq) {
+          assert(akash, 'Client need to be initalized');
+          await akash.query.deployment.get.params({
+            owner: address,
+            dseq,
           });
         },
         async depositDeployment(dseq, amount = '5000uakt') {
