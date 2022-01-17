@@ -64,6 +64,14 @@ const start = (zcf) => {
       });
   };
 
+  const startWatchingDeployment = async () => {
+    // init the client
+    await E(akashClient).initialize();
+
+    // register next call
+    registerNextWakeupCheck();
+  };
+
   const watchAkashDeployment = (seat) => {
     // assertProposalShape(seat, {
     //   give: { Fund: null },
@@ -75,7 +83,7 @@ const start = (zcf) => {
     seat.exit();
 
     // start watching deployment
-    registerNextWakeupCheck();
+    startWatchingDeployment();
 
     return defaultAcceptanceMsg;
   };
