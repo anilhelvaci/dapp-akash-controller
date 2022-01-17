@@ -49,6 +49,7 @@ export const bootPlugin = () => {
 
       return Far('akash-client', {
         initialize,
+        address,
         async balance() {
           assert(akash, 'Client need to be initalized');
           return akash.query.bank.balance(address, 'uakt');
