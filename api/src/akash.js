@@ -21,7 +21,7 @@ const initClient = async (mnemonic, rpcEndpoint) => {
     rpcEndpoint || DEFAULT_AKASH_RPC,
     offlineSigner,
   );
-  console.log('==== Akash initialized, address', address);
+  console.log('Akash address', address);
   return { akash, address };
 };
 
@@ -66,7 +66,7 @@ export const bootPlugin = () => {
             dseq,
           });
         },
-        async depositDeployment(dseq, amount = '5000uakt') {
+        async depositDeployment(dseq, amount = '5000000uakt') {
           assert(akash, 'Client need to be initalized');
           return akash.tx.deployment.deposit.params({
             dseq,

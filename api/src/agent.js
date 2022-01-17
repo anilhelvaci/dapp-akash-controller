@@ -9,8 +9,8 @@ const startAgent = async ({
   maxCount = 5,
 }) => {
   // intializing
-  await E(akashClient).initialize();
   let count = 0;
+  await E(akashClient).initialize();
 
   const checkAndNotify = async () => {
     console.log('Checking deployment detail');
