@@ -2,10 +2,23 @@
 // Agoric Dapp api deployment script
 
 import { E } from '@agoric/eventual-send';
+import { AmountMath } from '@agoric/ertp';
 
 import '@agoric/zoe/exported.js';
 
 import installationConstants from '../ui/src/conf/installationConstants.js';
+
+const akt = harden({
+  peg: {
+    name: 'peg-channel-0-uphoton',
+  },
+  wallet: {
+    pursePetName: 'PhotonPurse',
+  },
+  payment: {
+    value: 1000000n / 4n,
+  },
+});
 
 // deploy.js runs in an ephemeral Node.js outside of swingset. The
 // spawner runs within ag-solo, so is persistent.  Once the deploy.js
@@ -28,7 +41,21 @@ export default async function deployApi(homePromise, { installUnsafePlugin }) {
   const home = await homePromise;
 
   // Unpack the references.
-  const { zoe, board, chainTimerService } = home;
+  const { zoe, wallet, board, chainTimerService, scratch, agoricNames } = home;
+
+  console.log('Finding the akt fund purse');
+  const purseP = E(E(wallet).getAdminFacet()).getPurse(akt.wallet.pursePetName);
+
+  console.log('Finding the aktPeg, pegasus instance...');
+  const [aktPeg, aktBrand, instance] = await Promise.all([
+    E(scratch).get(akt.peg.name),
+    E(purseP).getAllegedBrand(),
+    E(agoricNames).lookup('instance', 'Pegasus'),
+  ]);
+
+  assert(aktPeg, 'You may need to peg the `uakt` first');
+  assert(aktBrand, `No purse ${akt.wallet.pursePetName} found`);
+  const pegasus = E(home.zoe).getPublicFacet(instance);
 
   console.info('Please allow our unsafe plugins to enable Akash connection');
 
@@ -40,12 +67,16 @@ export default async function deployApi(homePromise, { installUnsafePlugin }) {
   const { INSTALLATION_BOARD_ID } = installationConstants;
   const installation = await E(board).getValue(INSTALLATION_BOARD_ID);
 
-  const issuerKeywordRecord = harden({});
+  const issuerKeywordRecord = harden({
+    Fund: aktBrand,
+  });
   const terms = harden({
     akashClient,
     timeAuthority: chainTimerService,
     checkInterval: 15n,
     deploymentId: '1232',
+    pegasus,
+    aktPeg,
   });
 
   // start the contract
@@ -58,8 +89,17 @@ export default async function deployApi(homePromise, { installUnsafePlugin }) {
   assert(creatorInvitation, 'Creator invitation must not be null');
   console.log('Controller instance started');
 
-  const proposal = harden({ give: {} });
-  const paymentRecords = harden({});
+  // set the Fund for this contract
+  const amount = harden(AmountMath.make(aktBrand, akt.payment.value));
+  const payment = await E(purseP).withdraw(amount);
+  const proposal = harden({
+    give: {
+      Fund: amount,
+    },
+  });
+  const paymentRecords = harden({
+    Fund: payment,
+  });
 
   const seatP = E(zoe).offer(creatorInvitation, proposal, paymentRecords);
 

@@ -9,6 +9,7 @@ import {
   assertProposalShape,
   assertIssuerKeywords,
 } from '@agoric/zoe/src/contractSupport/index.js';
+import { AmountMath } from '@agoric/ertp';
 
 const start = (zcf) => {
   assertIssuerKeywords(zcf, harden(['Fund']));
@@ -30,18 +31,16 @@ const start = (zcf) => {
   assert(deploymentId, X`A "deploymentId" is required`);
 
   let count = 0;
-  const { zcfSeat: controllerSeat } = zcf.makeEmptySeatKit();
+  let controllerSeat;
   const zoeService = zcf.getZoeService();
 
   const fundAkashAccount = async () => {
     console.log('Funding Akash account');
     // 5m uAKT = 5AKT
-    const amount = harden({
-      brand: brands.Fund,
-      value: 5000000n,
-    });
+    const amount = harden(AmountMath.make(brands.Fund, 5_000_000n));
     const payment = zcf.decrementBy(controllerSeat, amount);
     const akashAddr = E(akashClient.address);
+
     const transferInvitation = await E(pegasus).makeInvitationToTransfer(
       aktPeg,
       akashAddr,
@@ -54,11 +53,12 @@ const start = (zcf) => {
     );
 
     const result = await E(seatP).getOfferResult();
-    const payout = await E(seatP).getPayout();
+    console.log('Funding, done', result);
+
+    const payout = await E(seatP).getPayout('Transfer');
 
     // get back money if transfer failed
     zcf.incrementBy(payout);
-    console.log('Funding, done', result);
   };
 
   const depositDeployment = async () => {
@@ -123,21 +123,14 @@ const start = (zcf) => {
       give: { Fund: null },
     });
 
-    // fund the controller seat
-    controllerSeat.incrementBy(seat.decrementBy(seat.getCurrentAllocation()));
-    zcf.reallocate(controllerSeat, seat);
-    seat.exit();
-
+    controllerSeat = seat;
     // start watching deployment
     startWatchingDeployment();
 
     return defaultAcceptanceMsg;
   };
 
-  const creatorInvitation = zcf.makeInvitation(
-    watchAkashDeployment,
-    'watchAkashDeployment',
-  );
+  const creatorInvitation = zcf.makeInvitation(watchAkashDeployment);
 
   return harden({
     creatorInvitation,
