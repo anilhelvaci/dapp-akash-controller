@@ -40,7 +40,8 @@ task/tap-cosmos-faucet: hermes.config
 	curl -X POST -d '{"address": "$(ADDR_COSMOS)"}' https://faucet.testnet.cosmos.network
 	mkdir -p task && touch $@
 
-# gaiad tx ibc-transfer transfer transfer channel-73 agoric1agacedqv72t94cdalmz52fglzzqjcnywwr6zr4 15000uphoton --from relayer --node https://rpc.testnet.cosmos.network:443 --chain-id cosmoshub-testnet
+# gaiad keys add relayer --recover
+# gaiad tx ibc-transfer transfer transfer channel-83 agoric1kysdpcgp5yu5av37cqsdnj7hsytf3u6gceugkc 15000uphoton --from relayer --node https://rpc.testnet.cosmos.network:443 --chain-id cosmoshub-testnet
 # agd --home=_agstate/keys tx bank send -ojson --keyring-backend=test --gas=auto --gas-adjustment=1.2 --broadcast-mode=block --yes --chain-id=agoric --node=tcp://localhost:26657 provision agoric1dldpyge7vhp6wt6d4ten39hv66mskrlmdw498p 13000000ubld,50000000urun
 
 

@@ -20,6 +20,9 @@ const start = (zcf) => {
     checkInterval = 15n,
     deploymentId,
     maxCount = 2,
+    // demo ibc transfer
+    cosmosAddr,
+    depositValue = 5_000n,
     aktPeg,
     pegasus,
     brands,
@@ -37,9 +40,10 @@ const start = (zcf) => {
   const fundAkashAccount = async () => {
     console.log('Funding Akash account');
     // 5m uAKT = 5AKT
-    const amount = harden(AmountMath.make(brands.Fund, 5_000_000n));
+    const amount = harden(AmountMath.make(brands.Fund, depositValue));
     const payment = zcf.decrementBy(controllerSeat, amount);
-    const akashAddr = E(akashClient.address);
+    // const akashAddr = E(akashClient.address);
+    const akashAddr = cosmosAddr;
 
     const transferInvitation = await E(pegasus).makeInvitationToTransfer(
       aktPeg,
@@ -72,12 +76,13 @@ const start = (zcf) => {
 
   const checkAndNotify = async () => {
     console.log('Checking deployment detail');
-    const details = await E(akashClient).balance();
-    console.log('Details here', deploymentId, details);
+    const balance = await E(akashClient).balance();
+    console.log('Details here', deploymentId, balance);
 
-    if (!details) {
+    if (!balance.amount) {
       await fundAkashAccount();
-      await depositDeployment();
+      console.log('Trying to deposit payment');
+      // await depositDeployment();
     }
   };
 
@@ -130,7 +135,10 @@ const start = (zcf) => {
     return defaultAcceptanceMsg;
   };
 
-  const creatorInvitation = zcf.makeInvitation(watchAkashDeployment);
+  const creatorInvitation = zcf.makeInvitation(
+    watchAkashDeployment,
+    'watchAkashDeployment',
+  );
 
   return harden({
     creatorInvitation,

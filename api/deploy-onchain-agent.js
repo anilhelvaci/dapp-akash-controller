@@ -12,11 +12,14 @@ const akt = harden({
   peg: {
     name: 'peg-channel-0-uphoton',
   },
+  dest: {
+    address: 'cosmos1p26rc0ytxvc9lhxv825ekxw43vc3ucqp4cektr',
+  },
   wallet: {
     pursePetName: 'PhotonPurse',
   },
   payment: {
-    value: 1000000n / 4n,
+    value: 20_000n,
   },
 });
 
@@ -55,9 +58,8 @@ export default async function deployApi(homePromise, { installUnsafePlugin }) {
 
   assert(aktPeg, 'You may need to peg the `uakt` first');
   assert(aktBrand, `No purse ${akt.wallet.pursePetName} found`);
-  const pegasus = E(home.zoe).getPublicFacet(instance);
-
-  console.info('Please allow our unsafe plugins to enable Akash connection');
+  const pegasus = await E(home.zoe).getPublicFacet(instance);
+  const aktIssuer = await E(pegasus).getLocalIssuer(aktBrand);
 
   const akashClient = await installUnsafePlugin(
     './src/akash.js',
@@ -68,13 +70,14 @@ export default async function deployApi(homePromise, { installUnsafePlugin }) {
   const installation = await E(board).getValue(INSTALLATION_BOARD_ID);
 
   const issuerKeywordRecord = harden({
-    Fund: aktBrand,
+    Fund: aktIssuer,
   });
   const terms = harden({
     akashClient,
     timeAuthority: chainTimerService,
     checkInterval: 15n,
     deploymentId: '1232',
+    cosmosAddr: akt.dest.address,
     pegasus,
     aktPeg,
   });
@@ -89,7 +92,7 @@ export default async function deployApi(homePromise, { installUnsafePlugin }) {
   assert(creatorInvitation, 'Creator invitation must not be null');
   console.log('Controller instance started');
 
-  // set the Fund for this contract
+  // setup the Fund for this contract
   const amount = harden(AmountMath.make(aktBrand, akt.payment.value));
   const payment = await E(purseP).withdraw(amount);
   const proposal = harden({
