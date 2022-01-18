@@ -79,7 +79,7 @@ const start = (zcf) => {
     const balance = await E(akashClient).balance();
     console.log('Details here', deploymentId, balance);
 
-    if (!balance.amount) {
+    if (balance.amount === '0') {
       await fundAkashAccount();
       console.log('Trying to deposit payment');
       // await depositDeployment();
@@ -90,6 +90,7 @@ const start = (zcf) => {
     count += 1;
     if (count > maxCount) {
       console.log('Max check reached, exiting');
+      controllerSeat.exit();
       return;
     }
     const currentTs = await E(timeAuthority).getCurrentTimestamp();

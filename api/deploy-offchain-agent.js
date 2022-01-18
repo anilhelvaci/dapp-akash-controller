@@ -2,8 +2,24 @@
 // Agoric Dapp api deployment script
 
 import { E } from '@agoric/eventual-send';
+import { AmountMath } from '@agoric/ertp';
 
 import '@agoric/zoe/exported.js';
+
+const akt = harden({
+  peg: {
+    name: 'peg-channel-0-uphoton',
+  },
+  dest: {
+    address: 'cosmos1p26rc0ytxvc9lhxv825ekxw43vc3ucqp4cektr',
+  },
+  wallet: {
+    pursePetName: 'PhotonPurse',
+  },
+  payment: {
+    value: 1000_000n,
+  },
+});
 
 // deploy.js runs in an ephemeral Node.js outside of swingset. The
 // spawner runs within ag-solo, so is persistent.  Once the deploy.js
@@ -29,13 +45,26 @@ export default async function deployApi(
   const home = await homePromise;
 
   // Unpack the references.
-  const {
-    // The spawner persistently runs scripts within ag-solo, off-chain.
-    spawner,
-    chainTimerService,
-  } = home;
+  const { wallet, chainTimerService, scratch, agoricNames, spawner } = home;
 
-  console.info('Please allow our unsafe plugins to enable Akash connection');
+  console.log('Finding the akt fund purse');
+  const purseP = E(E(wallet).getAdminFacet()).getPurse(akt.wallet.pursePetName);
+
+  console.log('Finding the aktPeg, pegasus instance...');
+  const [aktPeg, aktBrand, instance] = await Promise.all([
+    E(scratch).get(akt.peg.name),
+    E(purseP).getAllegedBrand(),
+    E(agoricNames).lookup('instance', 'Pegasus'),
+  ]);
+
+  assert(aktPeg, 'You may need to peg the `uakt` first');
+  assert(aktBrand, `No purse ${akt.wallet.pursePetName} found`);
+  const pegasus = await E(home.zoe).getPublicFacet(instance);
+  const aktIssuer = await E(pegasus).getLocalIssuer(aktBrand);
+
+  // setup the Fund for this contract
+  const amount = harden(AmountMath.make(aktBrand, akt.payment.value));
+  const fund = await E(purseP).withdraw(amount);
 
   const akashClient = await installUnsafePlugin(
     './src/akash.js',
@@ -54,5 +83,11 @@ export default async function deployApi(
     timeAuthority: chainTimerService,
     checkInterval: 15n,
     deploymentId: '1232',
+    cosmosAddr: akt.dest.address,
+    pegasus,
+    aktPeg,
+    aktIssuer,
+    aktBrand,
+    fund,
   });
 }

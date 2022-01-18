@@ -107,7 +107,11 @@ export default async function deployApi(homePromise, { installUnsafePlugin }) {
   const seatP = E(zoe).offer(creatorInvitation, proposal, paymentRecords);
 
   console.log('Waiting for result...');
-  const result = await E(seatP).getOfferResult();
+  await E(seatP).getOfferResult();
 
-  console.log('Result here', result);
+  console.log('Waiting for payout');
+  const payout = await E(seatP).getPayout('Fund');
+
+  console.log('Deposit back');
+  E(purseP).deposit(payout);
 }
