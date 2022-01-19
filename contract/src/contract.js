@@ -8,6 +8,7 @@ import {
   defaultAcceptanceMsg,
   assertProposalShape,
   assertIssuerKeywords,
+  offerTo,
 } from '@agoric/zoe/src/contractSupport/index.js';
 import { AmountMath } from '@agoric/ertp';
 
@@ -35,14 +36,22 @@ const start = (zcf) => {
 
   let count = 0;
   let controllerSeat;
-  const zoeService = zcf.getZoeService();
+
+  // 5m uAKT = 5AKT
+  const aktDepositAmount = harden(AmountMath.make(brands.Fund, depositValue));
+
+  const depositAkashDeployment = async () => {
+    console.log('Depositing akash deployment', deploymentId);
+    const response = await E(akashClient).depositAkashDeployment(
+      deploymentId,
+      '5000000uakt',
+    );
+    console.log('Deposit, done', response);
+  };
 
   const fundAkashAccount = async () => {
     console.log('Funding Akash account');
-    // 5m uAKT = 5AKT
-    const amount = harden(AmountMath.make(brands.Fund, depositValue));
-    const payment = zcf.decrementBy(controllerSeat, amount);
-    // const akashAddr = E(akashClient.address);
+    // const akashAddr = await E(akashClient).getAddress();
     const akashAddr = cosmosAddr;
 
     const transferInvitation = await E(pegasus).makeInvitationToTransfer(
@@ -50,39 +59,49 @@ const start = (zcf) => {
       akashAddr,
     );
 
-    const seatP = E(zoeService).offer(
+    console.log('Offering transfer invitation...');
+    const { userSeatPromise: transferSeatP, deposited } = await offerTo(
+      zcf,
       transferInvitation,
-      harden({ give: { Transfer: amount } }),
-      harden({ Transfer: payment }),
+      harden({
+        Fund: 'Transfer',
+      }),
+      harden({
+        give: {
+          Transfer: aktDepositAmount,
+        },
+      }),
+      controllerSeat,
+      controllerSeat,
     );
 
-    const result = await E(seatP).getOfferResult();
-    console.log('Funding, done', result);
+    // register callback for deposited promise
+    deposited.then(async () => {
+      console.log('Transfer completed, checking result...');
+      const remains = await E(transferSeatP).getCurrentAllocation();
+      const transferOk = AmountMath.isEmpty(remains.Transfer);
 
-    const payout = await E(seatP).getPayout('Transfer');
+      if (transferOk) {
+        console.log('IBC transfer completed');
+        // XXX should we recheck the ballance?
+        await depositAkashDeployment();
+      } else {
+        console.log('IBC transfer failed');
+      }
+    });
 
-    // get back money if transfer failed
-    zcf.incrementBy(payout);
+    const result = await E(transferSeatP).getOfferResult();
+    console.log('Offer completed, result:', result);
   };
 
-  const depositDeployment = async () => {
-    console.log('Depositing akash deployment', deploymentId);
-    const response = await E(akashClient).depositDeployment(
-      deploymentId,
-      '5000000uakt',
-    );
-    console.log('Deposit, done', response);
-  };
-
-  const checkAndNotify = async () => {
+  const checkAndFund = async () => {
     console.log('Checking deployment detail');
     const balance = await E(akashClient).balance();
     console.log('Details here', deploymentId, balance);
 
     if (balance.amount === '0') {
+      // funding account and deposit the watch deployment
       await fundAkashAccount();
-      console.log('Trying to deposit payment');
-      // await depositDeployment();
     }
   };
 
@@ -102,7 +121,7 @@ const start = (zcf) => {
         checkAfter,
         Far('wakeObj', {
           wake: async () => {
-            await checkAndNotify();
+            await checkAndFund();
             registerNextWakeupCheck();
           },
         }),
