@@ -35,6 +35,7 @@ const deployIBCSend = async (homeP, _powers) => {
     E(purseP).getAllegedBrand(),
     E(purseP).getCurrentAmount(),
   ]);
+  const issuer = await E(pegPub).getLocalIssuer(brand);
   const amount = harden({ brand, value: the.payment.value });
   console.log('await payment...', { gross, amount });
   const pmt = await E(purseP).withdraw(amount);
@@ -49,6 +50,15 @@ const deployIBCSend = async (homeP, _powers) => {
     E(purseP).getCurrentAmount(),
   ]);
   console.log({ result, net });
+
+  console.log('Waiting for payout');
+  const payout = await E(seatP).getPayout('Transfer');
+
+  const remain = await E(issuer).getAmountOf(payout);
+  console.log('Payout here', remain);
+
+  await E(purseP).deposit(payout);
+  console.log('Deposit back');
 };
 
 harden(deployIBCSend);

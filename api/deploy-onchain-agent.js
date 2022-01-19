@@ -112,6 +112,9 @@ export default async function deployApi(homePromise, { installUnsafePlugin }) {
   console.log('Waiting for payout');
   const payout = await E(seatP).getPayout('Fund');
 
+  const remain = await E(aktIssuer).getAmountOf(payout);
+  console.log('Payout here', remain);
+
+  await E(purseP).deposit(payout);
   console.log('Deposit back');
-  E(purseP).deposit(payout);
 }
