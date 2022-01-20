@@ -12,6 +12,9 @@ import {
 } from '@agoric/zoe/src/contractSupport/index.js';
 import { AmountMath } from '@agoric/ertp';
 
+/**
+ * @type {ContractStartFn}
+ */
 const start = (zcf) => {
   assertIssuerKeywords(zcf, harden(['Fund']));
 
@@ -36,6 +39,7 @@ const start = (zcf) => {
 
   let count = 0;
   let controllerSeat;
+  let pendingDeposit = null;
 
   // 5m uAKT = 5AKT
   const aktDepositAmount = harden(AmountMath.make(brands.Fund, depositValue));
@@ -76,7 +80,7 @@ const start = (zcf) => {
     );
 
     // register callback for deposited promise
-    deposited.then(async () => {
+    pendingDeposit = deposited.then(async () => {
       console.log('Transfer completed, checking result...');
       const remains = await E(transferSeatP).getCurrentAllocation();
       const transferOk = AmountMath.isEmpty(remains.Transfer);
@@ -109,6 +113,8 @@ const start = (zcf) => {
     count += 1;
     if (count > maxCount) {
       console.log('Max check reached, exiting');
+      // XXX avoid potential race-condition with the scheduled task
+      await pendingDeposit;
       controllerSeat.exit();
       return;
     }
@@ -143,6 +149,9 @@ const start = (zcf) => {
     registerNextWakeupCheck();
   };
 
+  /**
+   * @type {OfferHandler}
+   */
   const watchAkashDeployment = (seat) => {
     assertProposalShape(seat, {
       give: { Fund: null },
