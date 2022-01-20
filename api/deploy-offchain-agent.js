@@ -17,7 +17,7 @@ const akt = harden({
     pursePetName: 'PhotonPurse',
   },
   payment: {
-    value: 1000_000n,
+    value: 2000_000n,
   },
 });
 
@@ -45,10 +45,18 @@ export default async function deployApi(
   const home = await homePromise;
 
   // Unpack the references.
-  const { wallet, chainTimerService, scratch, agoricNames, spawner } = home;
+  const {
+    zoe,
+    wallet,
+    chainTimerService,
+    scratch,
+    agoricNames,
+    spawner,
+  } = home;
 
   console.log('Finding the akt fund purse');
   const purseP = E(E(wallet).getAdminFacet()).getPurse(akt.wallet.pursePetName);
+  const depositFacetP = E(purseP).getDepositFacet();
 
   console.log('Finding the aktPeg, pegasus instance...');
   const [aktPeg, aktBrand, instance] = await Promise.all([
@@ -88,6 +96,8 @@ export default async function deployApi(
     aktPeg,
     aktIssuer,
     aktBrand,
+    depositFacetP,
     fund,
+    zoe,
   });
 }

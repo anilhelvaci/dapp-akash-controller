@@ -16,16 +16,26 @@ const startAgent = async ({
   aktBrand,
   aktIssuer,
   pegasus,
-  purseP,
+  depositFacetP,
   fund,
 }) => {
   // terms assertions
   assert.typeof(checkInterval, 'bigint');
+  assert(zoe, `zoe is required`);
   assert(akashClient, `An "akashClient" is required`);
   assert(deploymentId, `A "deploymentId" is required`);
 
   let count = 0;
   let currentFund = fund;
+
+  const depositDeployment = async () => {
+    console.log('Depositing akash deployment', deploymentId);
+    const response = await E(akashClient).depositDeployment(
+      deploymentId,
+      '5000000uakt',
+    );
+    console.log('Deposit, done', response);
+  };
 
   const fundAkashAccount = async () => {
     console.log('Funding Akash account');
@@ -38,7 +48,7 @@ const startAgent = async ({
       amount,
     );
 
-    // const akashAddr = E(akashClient.address);
+    // const akashAddr = await E(akashClient).getAddress();
     const akashAddr = cosmosAddr;
     currentFund = remainPayment;
 
@@ -48,31 +58,33 @@ const startAgent = async ({
       akashAddr,
     );
 
-    console.log('Sending offer...', amount);
     const seatP = E(zoe).offer(
       transferInvitation,
       harden({ give: { Transfer: amount } }),
       harden({ Transfer: payment }),
     );
 
+    E(seatP)
+      .getPayout('Transfer')
+      .then(async (payout) => {
+        // get back money if transfer failed
+        console.log('Checking payout...');
+        await E(depositFacetP).receive(payout);
+        console.log('Deposit the payout');
+
+        const remains = await E(seatP).getCurrentAllocation();
+        if (AmountMath.isEmpty(remains.Transfer)) {
+          console.log('==> Transfer success');
+          await depositDeployment();
+        } else {
+          console.log('==> Transfer failed');
+        }
+        console.log('Done');
+      });
+
     console.log('Waiting for the result...');
-    const result = await E(seatP).getOfferResult();
-    console.log('Funding, done', result);
-
-    const payout = await E(seatP).getPayout('Transfer');
-
-    // get back money if transfer failed
-    console.log('Getting payout', payout);
-    await E(purseP).deposit(payout);
-  };
-
-  const depositDeployment = async () => {
-    console.log('Depositing akash deployment', deploymentId);
-    const response = await E(akashClient).depositDeployment(
-      deploymentId,
-      '5000000uakt',
-    );
-    console.log('Deposit, done', response);
+    await E(seatP).getOfferResult();
+    console.log('Funding, done');
   };
 
   const checkAndNotify = async () => {
@@ -82,15 +94,16 @@ const startAgent = async ({
 
     if (balance.amount === '0') {
       await fundAkashAccount();
-      console.log('Trying to deposit payment');
-      await depositDeployment();
     }
   };
 
   const registerNextWakeupCheck = async () => {
     count += 1;
     if (count > maxCount) {
-      console.log('Max check reached, exiting');
+      console.log('Max check reached, exiting...');
+      console.log('Getting back current fund...');
+      await E(depositFacetP).receive(currentFund);
+      console.log('Done');
       return;
     }
     const currentTs = await E(timeAuthority).getCurrentTimestamp();
