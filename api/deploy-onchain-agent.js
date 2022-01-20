@@ -6,7 +6,7 @@ import { AmountMath } from '@agoric/ertp';
 
 import '@agoric/zoe/exported.js';
 
-import installationConstants from '../ui/src/conf/installationConstants.js';
+import installationConstants from '../conf/installationConstants.mjs';
 
 const akt = harden({
   peg: {

@@ -81,8 +81,8 @@ export default async function deployContract(
     CONTRACT_NAME,
     INSTALLATION_BOARD_ID,
   };
-  const defaultsFolder = pathResolve(`../ui/src/conf`);
-  const defaultsFile = pathResolve(`../ui/src/conf/installationConstants.js`);
+  const defaultsFolder = pathResolve(`../conf`);
+  const defaultsFile = pathResolve(`../conf/installationConstants.mjs`);
   console.log('writing', defaultsFile);
   const defaultsContents = `\
 // GENERATED FROM ${pathResolve('./deploy.js')}

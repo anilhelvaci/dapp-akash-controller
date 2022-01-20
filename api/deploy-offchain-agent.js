@@ -1,4 +1,5 @@
 // @ts-check
+/* eslint-env node */
 // Agoric Dapp api deployment script
 
 import { E } from '@agoric/eventual-send';
@@ -74,10 +75,9 @@ export default async function deployApi(
   const amount = harden(AmountMath.make(aktBrand, akt.payment.value));
   const fund = await E(purseP).withdraw(amount);
 
-  const akashClient = await installUnsafePlugin(
-    './src/akash.js',
-    {},
-  ).catch((e) => console.error(`${e}`));
+  const akashClient = await installUnsafePlugin('./src/akash.js', {
+    mnemonic: process.env.AKASH_MNEMNONIC,
+  }).catch((e) => console.error(`${e}`));
 
   // Bundle up the handler code
   const bundle = await bundleSource(pathResolve('./src/agent.js'));
@@ -90,7 +90,7 @@ export default async function deployApi(
     akashClient,
     timeAuthority: chainTimerService,
     checkInterval: 15n,
-    deploymentId: '1232',
+    deploymentId: process.env.AKASH_DEPLOYMENT_SEQ,
     cosmosAddr: akt.dest.address,
     pegasus,
     aktPeg,

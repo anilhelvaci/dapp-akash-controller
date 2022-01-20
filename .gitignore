@@ -1,7 +1,5 @@
 node_modules
 _agstate/
 .idea/
-ui/.cache/
-ui/dist/
-ui/build
+
 local-ibc/task
