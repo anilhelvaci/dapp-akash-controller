@@ -25,7 +25,7 @@ const start = (zcf) => {
     deploymentId,
     maxCount = 2,
     // demo ibc transfer
-    cosmosAddr,
+    // cosmosAddr,
     depositValue = 5_000n,
     aktPeg,
     pegasus,
@@ -46,7 +46,7 @@ const start = (zcf) => {
 
   const depositAkashDeployment = async () => {
     console.log('Depositing akash deployment', deploymentId);
-    const response = await E(akashClient).depositAkashDeployment(
+    const response = await E(akashClient).depositDeployment(
       deploymentId,
       '5000000uakt',
     );
@@ -55,8 +55,8 @@ const start = (zcf) => {
 
   const fundAkashAccount = async () => {
     console.log('Funding Akash account');
-    // const akashAddr = await E(akashClient).getAddress();
-    const akashAddr = cosmosAddr;
+    const akashAddr = await E(akashClient).getAddress();
+    // const akashAddr = cosmosAddr;
 
     const transferInvitation = await E(pegasus).makeInvitationToTransfer(
       aktPeg,
@@ -94,7 +94,12 @@ const start = (zcf) => {
       }
     });
 
-    const result = await E(transferSeatP).getOfferResult();
+    const result = await E(transferSeatP)
+      .getOfferResult()
+      .catch((err) => {
+        console.error('Error while offering result', err);
+        throw err;
+      });
     console.log('Offer completed, result:', result);
   };
 

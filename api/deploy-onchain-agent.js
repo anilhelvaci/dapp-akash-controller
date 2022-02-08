@@ -1,4 +1,5 @@
 // @ts-check
+/* eslint-env node */
 // Agoric Dapp api deployment script
 
 import { E } from '@agoric/eventual-send';
@@ -61,10 +62,10 @@ export default async function deployApi(homePromise, { installUnsafePlugin }) {
   const pegasus = await E(home.zoe).getPublicFacet(instance);
   const aktIssuer = await E(pegasus).getLocalIssuer(aktBrand);
 
-  const akashClient = await installUnsafePlugin(
-    './src/akash.js',
-    {},
-  ).catch((e) => console.error(`${e}`));
+  const akashClient = await installUnsafePlugin('./src/akash.js', {
+    mnemonic: process.env.AKASH_MNEMNONIC,
+    deploymentId: process.env.AKASH_WATCHED_DSEQ,
+  }).catch((e) => console.error(`${e}`));
 
   const { INSTALLATION_BOARD_ID } = installationConstants;
   const installation = await E(board).getValue(INSTALLATION_BOARD_ID);
@@ -104,6 +105,7 @@ export default async function deployApi(homePromise, { installUnsafePlugin }) {
     Fund: payment,
   });
 
+  console.log('Sending offer...');
   const seatP = E(zoe).offer(creatorInvitation, proposal, paymentRecords);
 
   console.log('Waiting for result...');
