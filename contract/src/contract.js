@@ -48,7 +48,7 @@ const start = (zcf) => {
     console.log('Depositing akash deployment', deploymentId);
     const response = await E(akashClient).depositDeployment(
       deploymentId,
-      '5000000uakt',
+      `${depositValue}uakt`,
     );
     console.log('Deposit, done', response);
   };

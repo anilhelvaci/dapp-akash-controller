@@ -12,16 +12,28 @@ import { setupZCFTest } from '@agoric/zoe/test/unitTests/zcf/setupZcfTest.js';
 
 const contractPath = new URL('../src/contract.js', import.meta.url).pathname;
 
-/**
- * @param {bigint} aktAmount
- */
-const makeFakeAkashClient = (aktAmount) => {
+const akash = harden({
+  peg: {
+    name: 'peg-channel-0-uphoton',
+  },
+  dest: {
+    address: 'akash-address-hash',
+  },
+  deployment: {
+    id: '_watched_deployment_id_',
+    value: 20_000n,
+  },
+});
+
+const makeFakeAkashClient = (t) => {
+  let aktAmount = 0n;
+
   return Far('fakeAkashClient', {
     initialize() {
-      return Promise.resolve('Initialized');
+      return Promise.resolve('initialized');
     },
     getAddress() {
-      return Promise.resolve('akash-adress-hash');
+      return Promise.resolve(akash.dest.address);
     },
     balance() {
       return Promise.resolve({
@@ -29,17 +41,37 @@ const makeFakeAkashClient = (aktAmount) => {
         amount: `${aktAmount}`,
       });
     },
-    depositDeployment() {
+    depositDeployment(dseq, amount) {
+      t.is(
+        dseq,
+        akash.deployment.id,
+        'Deposited deployment id did not match watched one',
+      );
+      t.is(
+        amount,
+        `${akash.deployment.value}uakt`,
+        'Deposit amount did not match',
+      );
       return Promise.resolve('deposited');
+    },
+    /**
+     * Set current AKT balance for this fake client
+     * (XXX not in real client)
+     *
+     * @param {bigint} val
+     */
+    setTestAmount(val) {
+      aktAmount = val;
     },
   });
 };
 
 /**
- * @param {*} zcf
+ * @param {any} t
+ * @param {ContractFacet} zcf
  * @param {boolean} shouldSucceed
  */
-const makeFakePegasus = (zcf, shouldSucceed) => {
+const makeFakePegasus = (t, zcf, shouldSucceed) => {
   const { zcfSeat: poolSeat } = zcf.makeEmptySeatKit();
 
   return Far('fakePegasus', {
@@ -51,6 +83,8 @@ const makeFakePegasus = (zcf, shouldSucceed) => {
     async makeInvitationToTransfer(peg, remoteAddr) {
       assert(peg, 'a Peg is required');
       assert(remoteAddr, 'a remoteAddr is required');
+
+      t.is(remoteAddr, akash.dest.address, 'Remote akash addr does not match');
 
       /**
        * @param {ZCFSeat} seat
@@ -85,8 +119,8 @@ const makeFakePegasus = (zcf, shouldSucceed) => {
   });
 };
 
-test('zoe - watch Akash deployment, maxCount=1', async (t) => {
-  t.plan(5);
+test('zoe - watch Akash deployment, maxCount=1, IBC transfer failed', async (t) => {
+  t.plan(2);
   const { mint: aktMint, issuer: aktIssuer, brand: aktBrand } = makeIssuerKit(
     'fakeAkt',
   );
@@ -98,10 +132,9 @@ test('zoe - watch Akash deployment, maxCount=1', async (t) => {
   const bundle = await bundleSource(contractPath);
   const installation = await E(zoe).install(bundle);
 
-  const pegasus = makeFakePegasus(zcf, true);
-  const akashClient = makeFakeAkashClient(0n);
+  const pegasus = makeFakePegasus(t, zcf, false);
+  const akashClient = makeFakeAkashClient(t);
   const timer = buildManualTimer(console.log);
-
   const aktPeg = Far('fakeAktPeg', {});
 
   const contractTerms = harden({
@@ -109,7 +142,7 @@ test('zoe - watch Akash deployment, maxCount=1', async (t) => {
     timeAuthority: timer,
     checkInterval: 1n,
     maxCount: 1,
-    deploymentId: '1232',
+    deploymentId: akash.deployment.id,
     pegasus,
     aktPeg,
   });
@@ -131,7 +164,7 @@ test('zoe - watch Akash deployment, maxCount=1', async (t) => {
     Fund: payment,
   });
 
-  assert(creatorInvitation, 'Creator invitation must not be null');
+  assert(creatorInvitation);
 
   console.log('Sending offer...');
   const seatP = E(zoe).offer(creatorInvitation, proposal, paymentRecords);
@@ -139,7 +172,7 @@ test('zoe - watch Akash deployment, maxCount=1', async (t) => {
   console.log('Waiting for result...');
   await E(seatP).getOfferResult();
 
-  timer.tick();
+  await timer.tick();
 
   console.log('Waiting for payout');
   const payout = await E(seatP).getPayout('Fund');
@@ -147,5 +180,138 @@ test('zoe - watch Akash deployment, maxCount=1', async (t) => {
   const remain = await E(aktIssuer).getAmountOf(payout);
   console.log('Payout here', remain);
 
-  // XXX assertion
+  // IBC transfer failed, Fund is not affected
+  t.is(remain.value, 5_000_000n, 'The fund should be preserved');
+});
+
+test('zoe - watch Akash deployment, maxCount=1, IBC transfer succeeded', async (t) => {
+  t.plan(4);
+  const { mint: aktMint, issuer: aktIssuer, brand: aktBrand } = makeIssuerKit(
+    'fakeAkt',
+  );
+  const issuerKeywordRecord = harden({
+    Fund: aktIssuer,
+  });
+
+  const { zoe, zcf } = await setupZCFTest(issuerKeywordRecord);
+  const bundle = await bundleSource(contractPath);
+  const installation = await E(zoe).install(bundle);
+
+  const pegasus = makeFakePegasus(t, zcf, true);
+  const akashClient = makeFakeAkashClient(t);
+  const timer = buildManualTimer(console.log);
+  const aktPeg = Far('fakeAktPeg', {});
+
+  const contractTerms = harden({
+    akashClient,
+    timeAuthority: timer,
+    checkInterval: 1n,
+    maxCount: 1,
+    deploymentId: akash.deployment.id,
+    depositValue: akash.deployment.value,
+    pegasus,
+    aktPeg,
+  });
+
+  const { creatorInvitation } = await E(zoe).startInstance(
+    installation,
+    issuerKeywordRecord,
+    contractTerms,
+  );
+
+  const amount = harden(AmountMath.make(aktBrand, 5_000_000n));
+  const payment = await E(aktMint).mintPayment(amount);
+  const proposal = harden({
+    give: {
+      Fund: amount,
+    },
+  });
+  const paymentRecords = harden({
+    Fund: payment,
+  });
+
+  assert(creatorInvitation);
+
+  console.log('Sending offer...');
+  const seatP = E(zoe).offer(creatorInvitation, proposal, paymentRecords);
+
+  console.log('Waiting for result...');
+  await E(seatP).getOfferResult();
+
+  await timer.tick();
+
+  console.log('Waiting for payout');
+  const payout = await E(seatP).getPayout('Fund');
+
+  const remain = await E(aktIssuer).getAmountOf(payout);
+
+  // IBC transfer succeeded, Fund is not deducted
+  t.is(remain.value, 4_980_000n, 'The fund should be deducted');
+});
+
+test('zoe - watch Akash deployment, maxCount=1, current Fund is sufficient', async (t) => {
+  t.plan(1);
+  const { mint: aktMint, issuer: aktIssuer, brand: aktBrand } = makeIssuerKit(
+    'fakeAkt',
+  );
+  const issuerKeywordRecord = harden({
+    Fund: aktIssuer,
+  });
+
+  const { zoe, zcf } = await setupZCFTest(issuerKeywordRecord);
+  const bundle = await bundleSource(contractPath);
+  const installation = await E(zoe).install(bundle);
+
+  const pegasus = makeFakePegasus(t, zcf, true);
+  const akashClient = makeFakeAkashClient(t);
+  const timer = buildManualTimer(console.log);
+  const aktPeg = Far('fakeAktPeg', {});
+
+  const contractTerms = harden({
+    akashClient,
+    timeAuthority: timer,
+    checkInterval: 1n,
+    maxCount: 1,
+    deploymentId: akash.deployment.id,
+    depositValue: akash.deployment.value,
+    pegasus,
+    aktPeg,
+  });
+
+  const { creatorInvitation } = await E(zoe).startInstance(
+    installation,
+    issuerKeywordRecord,
+    contractTerms,
+  );
+
+  const amount = harden(AmountMath.make(aktBrand, 5_000_000n));
+  const payment = await E(aktMint).mintPayment(amount);
+  const proposal = harden({
+    give: {
+      Fund: amount,
+    },
+  });
+  const paymentRecords = harden({
+    Fund: payment,
+  });
+
+  assert(creatorInvitation);
+
+  console.log('Sending offer...');
+  const seatP = E(zoe).offer(creatorInvitation, proposal, paymentRecords);
+
+  console.log('Waiting for result...');
+  await E(seatP).getOfferResult();
+
+  // this will ignore depsoiting
+  akashClient.setTestAmount(10_000_000n);
+  await timer.tick();
+
+  console.log('Waiting for payout');
+  const payout = await E(seatP).getPayout('Fund');
+
+  const remain = await E(aktIssuer).getAmountOf(payout);
+
+  // IBC transfer succeeded, Fund is not deducted
+  t.is(remain.value, 5_000_000n, 'The fund should be deducted');
 });
