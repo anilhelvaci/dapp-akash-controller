@@ -32,7 +32,7 @@ const deployPeg = async (homeP, _powers) => {
   const connections = await E(home.pegasusConnections).entries();
   assert(connections.length > 0, `pegasusConnections nameHub is empty`);
   console.log('pegasusConnections:', connections.length);
-  const [addr, conn] = connections.find(([a, _c]) =>
+  const [addr, { actions }] = connections.find(([a, _c]) =>
     a.endsWith(chains.agoric.channel),
   );
 
@@ -45,7 +45,7 @@ const deployPeg = async (homeP, _powers) => {
   const name = `peg-${chains.agoric.channel}-${denom}`;
   console.log('creating', name, 'from', addr);
   const NAT = 'nat'; // AssetKind.NAT from ERTP
-  const peg = await E(pegPub).pegRemote(keyword, conn, denom, NAT, {
+  const peg = await E(actions).pegRemote(keyword, denom, NAT, {
     decimalPlaces,
   });
   await E(home.scratch).set(name, peg);

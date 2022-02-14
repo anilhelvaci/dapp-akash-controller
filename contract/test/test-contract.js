@@ -119,7 +119,7 @@ const makeFakePegasus = (t, zcf, shouldSucceed) => {
   });
 };
 
-test('zoe - watch Akash deployment, maxCount=1, IBC transfer failed', async (t) => {
+test('zoe - watch Akash deployment, maxCheck=1, IBC transfer failed', async (t) => {
   t.plan(2);
   const { mint: aktMint, issuer: aktIssuer, brand: aktBrand } = makeIssuerKit(
     'fakeAkt',
@@ -141,7 +141,7 @@ test('zoe - watch Akash deployment, maxCount=1, IBC transfer failed', async (t) 
     akashClient,
     timeAuthority: timer,
     checkInterval: 1n,
-    maxCount: 1,
+    maxCheck: 1,
     deploymentId: akash.deployment.id,
     pegasus,
     aktPeg,
@@ -184,7 +184,7 @@ test('zoe - watch Akash deployment, maxCount=1, IBC transfer failed', async (t) 
   t.is(remain.value, 5_000_000n, 'The fund should be preserved');
 });
 
-test('zoe - watch Akash deployment, maxCount=1, IBC transfer succeeded', async (t) => {
+test('zoe - watch Akash deployment, maxCheck=1, IBC transfer succeeded', async (t) => {
   t.plan(4);
   const { mint: aktMint, issuer: aktIssuer, brand: aktBrand } = makeIssuerKit(
     'fakeAkt',
@@ -206,7 +206,7 @@ test('zoe - watch Akash deployment, maxCount=1, IBC transfer succeeded', async (
     akashClient,
     timeAuthority: timer,
     checkInterval: 1n,
-    maxCount: 1,
+    maxCheck: 1,
     deploymentId: akash.deployment.id,
     depositValue: akash.deployment.value,
     pegasus,
@@ -249,7 +249,7 @@ test('zoe - watch Akash deployment, maxCount=1, IBC transfer succeeded', async (
   t.is(remain.value, 4_980_000n, 'The fund should be deducted');
 });
 
-test('zoe - watch Akash deployment, maxCount=1, current Fund is sufficient', async (t) => {
+test('zoe - watch Akash deployment, maxCheck=1, current Fund is sufficient', async (t) => {
   t.plan(1);
   const { mint: aktMint, issuer: aktIssuer, brand: aktBrand } = makeIssuerKit(
     'fakeAkt',
@@ -271,7 +271,7 @@ test('zoe - watch Akash deployment, maxCount=1, current Fund is sufficient', asy
     akashClient,
     timeAuthority: timer,
     checkInterval: 1n,
-    maxCount: 1,
+    maxCheck: 1,
     deploymentId: akash.deployment.id,
     depositValue: akash.deployment.value,
     pegasus,
@@ -315,3 +315,7 @@ test('zoe - watch Akash deployment, maxCount=1, current Fund is sufficient', asy
   // IBC transfer succeeded, Fund is not deducted
   t.is(remain.value, 5_000_000n, 'The fund should be deducted');
 });
+
+// XXX currently, we do not have any way to know the scheduled task is completed
+// So we don't know when to trigger timer.tick to simulate multiple calls case.
+// We may need to change the contract code to achieve this

@@ -11,7 +11,7 @@ const the = harden({
     pursePetName: 'PhotonPurse',
   },
   payment: {
-    value: 1000_000n / 4n,
+    value: 1000_000n,
   },
 });
 

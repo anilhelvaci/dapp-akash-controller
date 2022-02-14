@@ -23,7 +23,7 @@ const start = (zcf) => {
     timeAuthority,
     checkInterval = 15n,
     deploymentId,
-    maxCount = 2,
+    maxCheck = 2,
     // demo ibc transfer
     // cosmosAddr,
     depositValue = 5_000n,
@@ -116,7 +116,7 @@ const start = (zcf) => {
 
   const registerNextWakeupCheck = async () => {
     count += 1;
-    if (count > maxCount) {
+    if (count > maxCheck) {
       console.log('Max check reached, exiting');
       // XXX avoid potential race-condition with the scheduled task
       await pendingDeposit;
