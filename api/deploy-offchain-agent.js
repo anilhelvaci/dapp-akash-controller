@@ -12,7 +12,7 @@ const akt = harden({
     name: 'peg-channel-0-uphoton',
   },
   dest: {
-    address: 'cosmos1p26rc0ytxvc9lhxv825ekxw43vc3ucqp4cektr',
+    address: 'cosmos1h68l7uqw255w4m2v82rqwsl6p2qmkrg08u5mye',
   },
   wallet: {
     pursePetName: 'PhotonPurse',

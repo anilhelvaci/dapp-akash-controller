@@ -1,11 +1,13 @@
 import { E } from '@agoric/eventual-send';
+import { observeNotifier } from '@agoric/notifier';
+import { AmountMath } from '@agoric/ertp';
 
 const the = harden({
   peg: {
     name: 'peg-channel-0-uphoton',
   },
   dest: {
-    address: 'cosmos1p26rc0ytxvc9lhxv825ekxw43vc3ucqp4cektr',
+    address: 'cosmos1h68l7uqw255w4m2v82rqwsl6p2qmkrg08u5mye',
   },
   wallet: {
     pursePetName: 'PhotonPurse',
@@ -44,6 +46,16 @@ const deployIBCSend = async (homeP, _powers) => {
     harden({ give: { Transfer: amount } }),
     harden({ Transfer: pmt }),
   );
+
+  observeNotifier(
+    E(seatP).getNotifier(),
+    harden({
+      fail: (reason) => {
+        console.log('Contract failed', reason);
+      },
+    }),
+  );
+
   console.log('await result...');
   const [result, net] = await Promise.all([
     E(seatP).getOfferResult(),
@@ -53,12 +65,16 @@ const deployIBCSend = async (homeP, _powers) => {
 
   console.log('Waiting for payout');
   const payout = await E(seatP).getPayout('Transfer');
-
   const remain = await E(issuer).getAmountOf(payout);
-  console.log('Payout here', remain);
 
-  await E(purseP).deposit(payout);
-  console.log('Deposit back');
+  console.log('Transfer failed, remain amount', remain);
+
+  if (AmountMath.isEmpty(remain)) {
+    console.log('Transfer success');
+  } else {
+    await E(purseP).deposit(payout);
+    console.log('Deposit back');
+  }
 };
 
 harden(deployIBCSend);

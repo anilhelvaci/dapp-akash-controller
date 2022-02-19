@@ -25,7 +25,7 @@ const start = (zcf) => {
     deploymentId,
     maxCheck = 2,
     // demo ibc transfer
-    // cosmosAddr,
+    cosmosAddr,
     depositValue = 5_000n,
     aktPeg,
     pegasus,
@@ -55,9 +55,7 @@ const start = (zcf) => {
 
   const fundAkashAccount = async () => {
     console.log('Funding Akash account');
-    const akashAddr = await E(akashClient).getAddress();
-    // const akashAddr = cosmosAddr;
-
+    const akashAddr = cosmosAddr || (await E(akashClient).getAddress());
     const transferInvitation = await E(pegasus).makeInvitationToTransfer(
       aktPeg,
       akashAddr,
@@ -151,7 +149,9 @@ const start = (zcf) => {
     await E(akashClient).initialize();
 
     // register next call
-    registerNextWakeupCheck();
+    await registerNextWakeupCheck().catch((err) => {
+      controllerSeat.fail(err);
+    });
   };
 
   /**

@@ -5,8 +5,8 @@ services:
       context: .
       dockerfile: hermes.Dockerfile
       args:
-        TAG: v0.11.1
-    image: hermes:0.11.1
+        TAG: df0cc5d312a7467cc0252ce16391a17b3b57c714
+    image: hermes:0.12.0-pre
     volumes:
       - "hermes-home:/home/hermes"
       - ".:/config:ro"

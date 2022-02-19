@@ -1,7 +1,7 @@
 CHAIN_AG=agoric
 CHAIN_COSMOS=cosmoshub-testnet
 
-HERMES=docker run --rm -vhermes-home:/home/hermes:z -v$$PWD:/config hermes:0.11.1 -c /config/hermes.config
+HERMES=docker run --rm -vhermes-home:/home/hermes:z -v$$PWD:/config hermes:0.12.0-pre -c /config/hermes.config
 KEYFILE=ibc-relay-mnemonic
 
 task/restore-keys: $(KEYFILE) task/hermes-image task/hermes-volume hermes.config
@@ -42,7 +42,7 @@ task/tap-cosmos-faucet: hermes.config
 
 # gaiad keys add relayer --recover
 # (enter relayer mnemonic)
-# gaiad tx ibc-transfer transfer transfer channel-134 agoric1gcxr2h86zqknfwalzml8vz622jsarhn7s2e43x 15000uphoton --from relayer --node https://rpc.testnet.cosmos.network:443 --chain-id cosmoshub-testnet --yes
+# gaiad tx ibc-transfer transfer transfer channel-6 agoric1uqc9ehq2k5tkkmrx7wutexltlmwk53wnq9qkpx 15000000uphoton --from relayer --node https://rpc.testnet.cosmos.network:443 --chain-id cosmoshub-testnet --yes
 
 task/tap-agoric-faucet: hermes.config
 	@echo tapping agoric faucet

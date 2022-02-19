@@ -4,6 +4,7 @@
 
 import { E } from '@agoric/eventual-send';
 import { AmountMath } from '@agoric/ertp';
+import { observeNotifier } from '@agoric/notifier';
 
 import '@agoric/zoe/exported.js';
 
@@ -14,13 +15,13 @@ const akt = harden({
     name: 'peg-channel-0-uphoton',
   },
   dest: {
-    address: 'cosmos1p26rc0ytxvc9lhxv825ekxw43vc3ucqp4cektr',
+    address: 'cosmos1h68l7uqw255w4m2v82rqwsl6p2qmkrg08u5mye',
   },
   wallet: {
-    pursePetName: 'PhotonPurse',
+    pursePetName: 'Photon Purse',
   },
   payment: {
-    value: 20_000n,
+    value: 10_000n,
   },
 });
 
@@ -108,15 +109,26 @@ export default async function deployApi(homePromise, { installUnsafePlugin }) {
   console.log('Sending offer...');
   const seatP = E(zoe).offer(creatorInvitation, proposal, paymentRecords);
 
+  observeNotifier(
+    E(seatP).getNotifier(),
+    harden({
+      fail: (reason) => {
+        console.log('Contract failed', reason);
+      },
+    }),
+  );
+
   console.log('Waiting for result...');
   await E(seatP).getOfferResult();
 
   console.log('Waiting for payout');
   const payout = await E(seatP).getPayout('Fund');
-
   const remain = await E(aktIssuer).getAmountOf(payout);
-  console.log('Payout here', remain);
 
-  await E(purseP).deposit(payout);
-  console.log('Deposit back');
+  console.log('Remain amount', remain);
+
+  if (!AmountMath.isEmpty(remain)) {
+    await E(purseP).deposit(payout);
+    console.log('Deposit back');
+  }
 }
