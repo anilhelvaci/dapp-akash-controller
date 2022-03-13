@@ -1,5 +1,5 @@
 CHAIN_AG=agoric
-CHAIN_COSMOS=cosmoshub-testnet
+CHAIN_AKASH=edgenet-1
 
 HERMES=docker run --rm -vhermes-home:/home/hermes:z -v$$PWD:/config hermes:0.12.0-pre -c /config/hermes.config
 KEYFILE=ibc-relay-mnemonic
@@ -8,19 +8,19 @@ task/restore-keys: $(KEYFILE) task/hermes-image task/hermes-volume hermes.config
 	MNEMONIC="$$(cat $(KEYFILE))"; \
 	echo $$MNEMONIC | sha1sum ; \
 	$(HERMES) keys restore $(CHAIN_AG) -p "m/44'/564'/0'/0/0" -m "$$MNEMONIC"; \
-	$(HERMES) keys restore $(CHAIN_COSMOS) -m "$$MNEMONIC"
+	$(HERMES) keys restore $(CHAIN_AKASH) -m "$$MNEMONIC"
 	mkdir -p task && touch $@
 
 # ISSUE: these are the results of task/restore-keys
 ADDR_AG=agoric12t2yqeg4pdne7w7fadacvp8l8afevdsumhtswr
-ADDR_COSMOS=cosmos1h68l7uqw255w4m2v82rqwsl6p2qmkrg08u5mye
+ADDR_AKASH=akash1h68l7uqw255w4m2v82rqwsl6p2qmkrg028euar
 
 start: task/create-channel
 	docker-compose up -d
 
 task/create-channel: hermes.config task/hermes-image task/hermes-volume \
-		task/restore-keys task/tap-cosmos-faucet task/tap-agoric-faucet
-	$(HERMES) create channel $(CHAIN_COSMOS) $(CHAIN_AG) --port-a transfer --port-b pegasus -o unordered
+		task/restore-keys task/tap-akash-faucet task/tap-agoric-faucet
+	$(HERMES) create channel $(CHAIN_AKASH) $(CHAIN_AG) --port-a transfer --port-b pegasus -o unordered
 	mkdir -p task && touch $@
 
 task/hermes-image: docker-compose.yml hermes.Dockerfile
@@ -34,15 +34,15 @@ task/hermes-volume:
 	docker volume create hermes-home
 	mkdir -p task && touch $@
 
-task/tap-cosmos-faucet: hermes.config
+task/tap-akash-faucet: hermes.config
 	@echo tapping faucet
-	@echo per https://tutorials.cosmos.network/connecting-to-testnet/using-cli.html#requesting-tokens-from-the-faucet
-	curl -X POST -d '{"address": "$(ADDR_COSMOS)"}' https://faucet.testnet.cosmos.network
+	@echo per http://55ma08d6b9aht4gtovcih95dps.ingress.edgenet-1.ewr1.aksh.pw
+	curl -X POST -d 'address=$(ADDR_AKASH)' http://55ma08d6b9aht4gtovcih95dps.ingress.edgenet-1.ewr1.aksh.pw/faucet
 	mkdir -p task && touch $@
 
-# gaiad keys add relayer --recover
+# akash keys add relayer --recover
 # (enter relayer mnemonic)
-# gaiad tx ibc-transfer transfer transfer channel-6 agoric1uqc9ehq2k5tkkmrx7wutexltlmwk53wnq9qkpx 15000000uphoton --from relayer --node https://rpc.testnet.cosmos.network:443 --chain-id cosmoshub-testnet --yes
+# akash tx ibc-transfer transfer transfer channel-3 agoric1jyjxmxqseu4tpn0wuks4xs9hf9yy4n4usjyvuy 15000000uakt --from relayer --node=http://localhost:36657 --chain-id edgenet-1 --yes --fees=5000uakt
 
 task/tap-agoric-faucet: hermes.config
 	@echo tapping agoric faucet
