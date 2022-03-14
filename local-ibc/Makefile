@@ -42,7 +42,7 @@ task/tap-akash-faucet: hermes.config
 
 # akash keys add relayer --recover
 # (enter relayer mnemonic)
-# akash tx ibc-transfer transfer transfer channel-3 agoric1jyjxmxqseu4tpn0wuks4xs9hf9yy4n4usjyvuy 15000000uakt --from relayer --node=http://localhost:36657 --chain-id edgenet-1 --yes --fees=5000uakt
+# akash tx ibc-transfer transfer transfer channel-5 agoric1ajygmq6gsaywng5xc35ahznls3tjgg7z2ggepe 15000000uakt --from relayer --node=http://localhost:36657 --chain-id edgenet-1 --yes --fees=5000uakt
 
 task/tap-agoric-faucet: hermes.config
 	@echo tapping agoric faucet
