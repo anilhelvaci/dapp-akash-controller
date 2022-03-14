@@ -1,7 +1,7 @@
 // @ts-check
 import { test } from '@agoric/zoe/tools/prepare-test-env-ava.js';
 
-import bundleSource from '@agoric/bundle-source';
+import bundleSource from '@endo/bundle-source';
 
 import { Far } from '@agoric/marshal';
 import { E } from '@agoric/eventual-send';
@@ -14,7 +14,7 @@ const contractPath = new URL('../src/contract.js', import.meta.url).pathname;
 
 const akash = harden({
   peg: {
-    name: 'peg-channel-0-uphoton',
+    name: 'peg-channel-0-uakt',
   },
   dest: {
     address: 'akash-address-hash',
@@ -35,7 +35,7 @@ const makeFakeAkashClient = (t) => {
     getAddress() {
       return Promise.resolve(akash.dest.address);
     },
-    balance() {
+    getDeploymentFund() {
       return Promise.resolve({
         denom: 'uakt',
         amount: `${aktAmount}`,
@@ -78,7 +78,7 @@ const makeFakePegasus = (t, zcf, shouldSucceed) => {
     /**
      *
      * @param {any} peg
-     * @param {String} remoteAddr
+     * @param {string} remoteAddr
      */
     async makeInvitationToTransfer(peg, remoteAddr) {
       assert(peg, 'a Peg is required');

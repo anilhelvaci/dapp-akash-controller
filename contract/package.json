@@ -14,6 +14,7 @@
     "lint-check-jessie": "eslint -c '.eslintrc-jessie.js' '**/*.{js,jsx}'"
   },
   "devDependencies": {
+    "@endo/bundle-source": "^2.1.0",
     "agoric": "*",
     "ava": "^3.13.0",
     "eslint": "^7.23.0",
@@ -27,7 +28,6 @@
   "dependencies": {
     "@agoric/assert": "*",
     "@agoric/babel-parser": "^7.6.4",
-    "@agoric/bundle-source": "*",
     "@agoric/ertp": "*",
     "@agoric/eventual-send": "*",
     "@agoric/install-ses": "*",

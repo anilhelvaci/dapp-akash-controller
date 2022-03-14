@@ -4,13 +4,13 @@ import { AmountMath } from '@agoric/ertp';
 
 const the = harden({
   peg: {
-    name: 'peg-channel-0-uphoton',
+    name: 'peg-channel-0-uakt',
   },
   dest: {
-    address: 'cosmos1h68l7uqw255w4m2v82rqwsl6p2qmkrg08u5mye',
+    address: 'akash1w82000mdkth3kqn00623wgtwxu4s7kkq75cl5j',
   },
   wallet: {
-    pursePetName: 'PhotonPurse',
+    pursePetName: 'Akash Deployment Fund',
   },
   payment: {
     value: 1000_000n,

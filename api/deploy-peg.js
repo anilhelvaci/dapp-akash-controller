@@ -3,9 +3,9 @@ import { E } from '@agoric/eventual-send';
 // const { details: X } = assert;
 
 const chains = harden({
-  cosmos: {
-    keyword: 'Photon',
-    denom: 'uphoton',
+  akash: {
+    keyword: 'Akash',
+    denom: 'uakt',
     decimalPlaces: 6,
   },
   agoric: {
@@ -41,7 +41,7 @@ const deployPeg = async (homeP, _powers) => {
   const instance = await E(home.agoricNames).lookup('instance', 'Pegasus');
   const pegPub = E(home.zoe).getPublicFacet(instance);
 
-  const { keyword, denom, decimalPlaces } = chains.cosmos;
+  const { keyword, denom, decimalPlaces } = chains.akash;
   const name = `peg-${chains.agoric.channel}-${denom}`;
   console.log('creating', name, 'from', addr);
   const NAT = 'nat'; // AssetKind.NAT from ERTP

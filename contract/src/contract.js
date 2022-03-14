@@ -24,9 +24,8 @@ const start = (zcf) => {
     checkInterval = 15n,
     deploymentId,
     maxCheck = 2,
-    // demo ibc transfer
-    cosmosAddr,
     depositValue = 5_000n,
+    minimalFundThreshold = 100_000n,
     aktPeg,
     pegasus,
     brands,
@@ -55,7 +54,7 @@ const start = (zcf) => {
 
   const fundAkashAccount = async () => {
     console.log('Funding Akash account');
-    const akashAddr = cosmosAddr || (await E(akashClient).getAddress());
+    const akashAddr = await E(akashClient).getAddress();
     const transferInvitation = await E(pegasus).makeInvitationToTransfer(
       aktPeg,
       akashAddr,
@@ -103,10 +102,12 @@ const start = (zcf) => {
 
   const checkAndFund = async () => {
     console.log('Checking deployment detail');
-    const balance = await E(akashClient).balance();
+    const balance = await E(akashClient).getDeploymentFund();
     console.log('Details here', deploymentId, balance);
 
-    if (balance.amount === '0') {
+    const amount = BigInt(balance.amount);
+
+    if (amount < minimalFundThreshold) {
       // funding account and deposit the watch deployment
       await fundAkashAccount();
     }
@@ -117,9 +118,10 @@ const start = (zcf) => {
     if (count > maxCheck) {
       console.log('Max check reached, exiting');
       // XXX avoid potential race-condition with the scheduled task
-      await pendingDeposit;
-      controllerSeat.exit();
-      return;
+      await pendingDeposit.finally(() => {
+        // always exit if exception occur
+        controllerSeat.exit();
+      });
     }
     const currentTs = await E(timeAuthority).getCurrentTimestamp();
     const checkAfter = currentTs + checkInterval;

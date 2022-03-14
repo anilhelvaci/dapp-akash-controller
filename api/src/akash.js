@@ -17,10 +17,7 @@ const initClient = async (mnemonic, rpcEndpoint) => {
   const accounts = await offlineSigner.getAccounts();
   const address = accounts[0].address;
 
-  const akash = await Akash.connect(
-    rpcEndpoint || DEFAULT_AKASH_RPC,
-    offlineSigner,
-  );
+  const akash = await Akash.connect(rpcEndpoint, offlineSigner);
   console.log('Akash address', address);
   return { akash, address };
 };
@@ -29,10 +26,10 @@ export const bootPlugin = () => {
   // console.error('booting akashClient');
   return Far('plugin', {
     /**
-     * @param {Record<string, any>} _opts
+     * @param {Record<string, any>} opts
      * @returns {AkashClient}
      */
-    async start(_opts) {
+    async start(opts) {
       let akash = null;
       let address = null;
 
@@ -41,8 +38,9 @@ export const bootPlugin = () => {
           console.warn('Client initialized, ignoring...');
           return;
         }
-        const mnemonic = _opts.mnemonic || DEFAULT_MNEMONIC;
-        const result = await initClient(mnemonic);
+        const mnemonic = opts.mnemonic || DEFAULT_MNEMONIC;
+        const rpcEndpoint = opts.rpcEndpoint || DEFAULT_AKASH_RPC;
+        const result = await initClient(mnemonic, rpcEndpoint);
         akash = result.akash;
         address = result.address;
       };
@@ -67,9 +65,14 @@ export const bootPlugin = () => {
             dseq,
           });
         },
+        async getDeploymentFund(dseq) {
+          const detail = await this.getDeploymentDetail(dseq);
+          return detail.escrow_account.balance;
+        },
         async depositDeployment(dseq, amount = '5000000uakt') {
           assert(akash, 'Client need to be initalized');
           return akash.tx.deployment.deposit.params({
+            owner: address,
             dseq,
             amount,
           });

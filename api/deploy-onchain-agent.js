@@ -12,13 +12,10 @@ import installationConstants from '../conf/installationConstants.mjs';
 
 const akt = harden({
   peg: {
-    name: 'peg-channel-0-uphoton',
-  },
-  dest: {
-    address: 'cosmos1h68l7uqw255w4m2v82rqwsl6p2qmkrg08u5mye',
+    name: 'peg-channel-0-uakt',
   },
   wallet: {
-    pursePetName: 'Photon Purse',
+    pursePetName: 'Akash Deployment Fund',
   },
   payment: {
     value: 10_000n,
@@ -63,9 +60,17 @@ export default async function deployApi(homePromise, { installUnsafePlugin }) {
   const pegasus = await E(home.zoe).getPublicFacet(instance);
   const aktIssuer = await E(pegasus).getLocalIssuer(aktBrand);
 
-  const akashClient = await installUnsafePlugin('./src/akash.js', {
-    mnemonic: process.env.AKASH_MNEMNONIC,
-    deploymentId: process.env.AKASH_WATCHED_DSEQ,
+  const mnemonic = process.env.AKASH_MNEMNONIC;
+  const rpcEndpoint = process.env.AKASH_RPC_ENDPOINT;
+  const deploymentId = process.env.AKASH_WATCHED_DSEQ;
+
+  assert(mnemonic, 'AKASH_MNEMNONIC env variables must not be empty');
+  assert(rpcEndpoint, 'AKASH_RPC_ENDPOINT env variables must not be empty');
+  assert(deploymentId, 'AKASH_WATCHED_DSEQ env variables must not be empty');
+
+  const akashClient = await installUnsafePlugin('./src/akash2.js', {
+    mnemonic,
+    rpcEndpoint,
   }).catch((e) => console.error(`${e}`));
 
   const { INSTALLATION_BOARD_ID } = installationConstants;
@@ -77,9 +82,10 @@ export default async function deployApi(homePromise, { installUnsafePlugin }) {
   const terms = harden({
     akashClient,
     timeAuthority: chainTimerService,
+    minimalFundThreshold: 5_000_000n,
+    depositValue: 5_000n,
     checkInterval: 15n,
-    deploymentId: '1232',
-    cosmosAddr: akt.dest.address,
+    deploymentId,
     pegasus,
     aktPeg,
   });

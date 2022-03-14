@@ -9,16 +9,13 @@ import '@agoric/zoe/exported.js';
 
 const akt = harden({
   peg: {
-    name: 'peg-channel-0-uphoton',
-  },
-  dest: {
-    address: 'cosmos1h68l7uqw255w4m2v82rqwsl6p2qmkrg08u5mye',
+    name: 'peg-channel-0-uakt',
   },
   wallet: {
-    pursePetName: 'PhotonPurse',
+    pursePetName: 'Akash Deployment Fund',
   },
   payment: {
-    value: 2000_000n,
+    value: 200_000n,
   },
 });
 
@@ -71,12 +68,21 @@ export default async function deployApi(
   const pegasus = await E(home.zoe).getPublicFacet(instance);
   const aktIssuer = await E(pegasus).getLocalIssuer(aktBrand);
 
+  const mnemonic = process.env.AKASH_MNEMNONIC;
+  const rpcEndpoint = process.env.AKASH_RPC_ENDPOINT;
+  const deploymentId = process.env.AKASH_WATCHED_DSEQ;
+
+  assert(mnemonic, 'AKASH_MNEMNONIC env variables must not be empty');
+  assert(rpcEndpoint, 'AKASH_RPC_ENDPOINT env variables must not be empty');
+  assert(deploymentId, 'AKASH_WATCHED_DSEQ env variables must not be empty');
+
   // setup the Fund for this contract
   const amount = harden(AmountMath.make(aktBrand, akt.payment.value));
   const fund = await E(purseP).withdraw(amount);
 
-  const akashClient = await installUnsafePlugin('./src/akash.js', {
-    mnemonic: process.env.AKASH_MNEMNONIC,
+  const akashClient = await installUnsafePlugin('./src/akash2.js', {
+    mnemonic,
+    rpcEndpoint,
   }).catch((e) => console.error(`${e}`));
 
   // Bundle up the handler code
@@ -91,7 +97,6 @@ export default async function deployApi(
     timeAuthority: chainTimerService,
     checkInterval: 15n,
     deploymentId: process.env.AKASH_DEPLOYMENT_SEQ,
-    cosmosAddr: akt.dest.address,
     pegasus,
     aktPeg,
     aktIssuer,
