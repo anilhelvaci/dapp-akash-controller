@@ -50,11 +50,13 @@ export const bootPlugin = () => {
         },
         async getDeploymentList() {
           assert(akash, 'Client need to be initalized');
+          console.log('Getting deployment list');
           return akash.query.deployment.list.params({
             owner: address,
           });
         },
         async getDeploymentDetail(dseq) {
+          console.log('Getting deployment detail', dseq);
           assert(akash, 'Client need to be initalized');
           return akash.query.deployment.get.params({
             owner: address,
@@ -62,12 +64,13 @@ export const bootPlugin = () => {
           });
         },
         async getDeploymentFund(dseq) {
+          console.log('Getting deployment fund', dseq);
           const detail = await this.getDeploymentDetail(dseq);
-          console.log('Detail here ==>', detail);
           return detail.escrowAccount.balance;
         },
         async depositDeployment(dseq, amount) {
           assert(akash, 'Client need to be initalized');
+          console.log('Depositing deployment', dseq, amount);
           return akash.tx.deployment.deposit.params({
             owner: address,
             dseq,

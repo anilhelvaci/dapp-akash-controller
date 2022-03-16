@@ -9,9 +9,8 @@ const startAgent = async ({
   checkInterval = 15n,
   deploymentId,
   maxCount = 2,
-  // demo ibc transfer
-  cosmosAddr,
-  depositValue = 1000_000n,
+  depositValue = 10_000n,
+  minimalFundThreshold = 100_000n,
   aktPeg,
   aktBrand,
   aktIssuer,
@@ -30,10 +29,11 @@ const startAgent = async ({
 
   const depositDeployment = async () => {
     console.log('Depositing akash deployment', deploymentId);
-    const response = await E(akashClient).depositDeployment(
-      deploymentId,
-      '5000000uakt',
-    );
+    const response = await E(akashClient).depositDeployment(deploymentId, {
+      // amount type Coin
+      amount: String(depositValue),
+      denom: 'uakt',
+    });
     console.log('Deposit, done', response);
   };
 
@@ -48,8 +48,7 @@ const startAgent = async ({
       amount,
     );
 
-    // const akashAddr = await E(akashClient).getAddress();
-    const akashAddr = cosmosAddr;
+    const akashAddr = await E(akashClient).getAddress();
     currentFund = remainPayment;
 
     console.log('Making transfer invitation', aktPeg, akashAddr);
@@ -88,12 +87,16 @@ const startAgent = async ({
   };
 
   const checkAndNotify = async () => {
-    console.log('Checking deployment detail');
-    const balance = await E(akashClient).balance();
-    console.log('Details here', deploymentId, balance);
+    // deployment balance type DecCoin
+    const balance = await E(akashClient).getDeploymentFund(deploymentId);
+    const amount = BigInt(balance.amount) / 1_000_000_000_000_000_000n;
 
-    if (balance.amount === '0') {
+    console.log('Details here', deploymentId, amount, minimalFundThreshold);
+
+    if (amount < minimalFundThreshold) {
       await fundAkashAccount();
+    } else {
+      console.log('Current fund is sufficient');
     }
   };
 

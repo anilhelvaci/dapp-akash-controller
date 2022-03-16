@@ -45,10 +45,11 @@ const start = (zcf) => {
 
   const depositAkashDeployment = async () => {
     console.log('Depositing akash deployment', deploymentId);
-    const response = await E(akashClient).depositDeployment(
-      deploymentId,
-      `${depositValue}uakt`,
-    );
+    const response = await E(akashClient).depositDeployment(deploymentId, {
+      // amount type Coin
+      amount: String(depositValue),
+      denom: 'uakt',
+    });
     console.log('Deposit, done', response);
   };
 
@@ -101,11 +102,11 @@ const start = (zcf) => {
   };
 
   const checkAndFund = async () => {
-    console.log('Checking deployment detail');
-    const balance = await E(akashClient).getDeploymentFund();
-    console.log('Details here', deploymentId, balance);
+    // deployment balance type DecCoin
+    const balance = await E(akashClient).getDeploymentFund(deploymentId);
+    const amount = BigInt(balance.amount) / 1_000_000_000_000_000_000n;
 
-    const amount = BigInt(balance.amount);
+    console.log('Details here', deploymentId, amount, minimalFundThreshold);
 
     if (amount < minimalFundThreshold) {
       // funding account and deposit the watch deployment

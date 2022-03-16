@@ -68,7 +68,7 @@ export default async function deployApi(homePromise, { installUnsafePlugin }) {
   assert(rpcEndpoint, 'AKASH_RPC_ENDPOINT env variables must not be empty');
   assert(deploymentId, 'AKASH_WATCHED_DSEQ env variables must not be empty');
 
-  const akashClient = await installUnsafePlugin('./src/akash2.js', {
+  const akashClient = await installUnsafePlugin('./src/akash.js', {
     mnemonic,
     rpcEndpoint,
   }).catch((e) => console.error(`${e}`));
@@ -82,7 +82,7 @@ export default async function deployApi(homePromise, { installUnsafePlugin }) {
   const terms = harden({
     akashClient,
     timeAuthority: chainTimerService,
-    minimalFundThreshold: 5_000_000n,
+    minimalFundThreshold: 6_000_000n,
     depositValue: 5_000n,
     checkInterval: 15n,
     deploymentId,
