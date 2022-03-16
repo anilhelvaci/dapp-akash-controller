@@ -114,16 +114,26 @@ const start = (zcf) => {
     }
   };
 
+  const waitForPendingDeposit = async () => {
+    try {
+      // XXX waiting for pending
+      await pendingDeposit;
+    } catch (err) {
+      // always exit if exception occur
+      console.log('Error while depositing', err);
+      controllerSeat.exit();
+    }
+  };
+
   const registerNextWakeupCheck = async () => {
+    await waitForPendingDeposit();
+
     count += 1;
     if (count > maxCheck) {
       console.log('Max check reached, exiting');
-      // XXX avoid potential race-condition with the scheduled task
-      await pendingDeposit.finally(() => {
-        // always exit if exception occur
-        controllerSeat.exit();
-      });
+      controllerSeat.exit();
     }
+
     const currentTs = await E(timeAuthority).getCurrentTimestamp();
     const checkAfter = currentTs + checkInterval;
     console.log('Registering next wakeup call at', checkAfter);
