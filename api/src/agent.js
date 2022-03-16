@@ -63,7 +63,7 @@ const startAgent = async ({
       harden({ Transfer: payment }),
     );
 
-    E(seatP)
+    const pendingDeposit = E(seatP)
       .getPayout('Transfer')
       .then(async (payout) => {
         // get back money if transfer failed
@@ -83,7 +83,11 @@ const startAgent = async ({
 
     console.log('Waiting for the result...');
     await E(seatP).getOfferResult();
-    console.log('Funding, done');
+
+    console.log('Waiting for payout');
+    await pendingDeposit;
+
+    console.log('Done');
   };
 
   const checkAndNotify = async () => {

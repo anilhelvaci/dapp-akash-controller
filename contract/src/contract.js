@@ -43,6 +43,17 @@ const start = (zcf) => {
   // 5m uAKT = 5AKT
   const aktDepositAmount = harden(AmountMath.make(brands.Fund, depositValue));
 
+  const waitForPendingDeposit = async () => {
+    try {
+      console.log('Waiting for pending deposit');
+      await pendingDeposit;
+    } catch (err) {
+      // always exit if exception occur
+      console.log('Error while depositing', err);
+      controllerSeat.exit();
+    }
+  };
+
   const depositAkashDeployment = async () => {
     console.log('Depositing akash deployment', deploymentId);
     const response = await E(akashClient).depositDeployment(deploymentId, {
@@ -99,6 +110,9 @@ const start = (zcf) => {
         throw err;
       });
     console.log('Offer completed, result:', result);
+
+    await waitForPendingDeposit();
+    console.log('Done');
   };
 
   const checkAndFund = async () => {
@@ -114,20 +128,7 @@ const start = (zcf) => {
     }
   };
 
-  const waitForPendingDeposit = async () => {
-    try {
-      // XXX waiting for pending
-      await pendingDeposit;
-    } catch (err) {
-      // always exit if exception occur
-      console.log('Error while depositing', err);
-      controllerSeat.exit();
-    }
-  };
-
   const registerNextWakeupCheck = async () => {
-    await waitForPendingDeposit();
-
     count += 1;
     if (count > maxCheck) {
       console.log('Max check reached, exiting');
