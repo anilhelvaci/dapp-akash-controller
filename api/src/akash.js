@@ -1,17 +1,13 @@
 import { Far } from '@agoric/marshal';
-import {
-  Akash,
-  // SDL,
-  // findDeploymentSequence
-} from 'akashjs';
-import { Secp256k1HdWallet } from '@cosmjs/amino';
+import { Akash } from 'akashjs';
+import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing';
 
 const DEFAULT_MNEMONIC =
   'enlist hip relief stomach skate base shallow young switch frequent cry park';
-const DEFAULT_AKASH_RPC = 'http://rpc.testnet-1.ewr1.aksh.pw:26657';
+const DEFAULT_AKASH_RPC = 'http://rpc.edgenet-1.ewr1.aksh.pw:26657';
 
 const initClient = async (mnemonic, rpcEndpoint) => {
-  const offlineSigner = await Secp256k1HdWallet.fromMnemonic(mnemonic, {
+  const offlineSigner = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
     prefix: 'akash',
   });
   const accounts = await offlineSigner.getAccounts();
@@ -60,16 +56,17 @@ export const bootPlugin = () => {
         },
         async getDeploymentDetail(dseq) {
           assert(akash, 'Client need to be initalized');
-          await akash.query.deployment.get.params({
+          return akash.query.deployment.get.params({
             owner: address,
             dseq,
           });
         },
         async getDeploymentFund(dseq) {
           const detail = await this.getDeploymentDetail(dseq);
-          return detail.escrow_account.balance;
+          console.log('Detail here ==>', detail);
+          return detail.escrowAccount.balance;
         },
-        async depositDeployment(dseq, amount = '5000000uakt') {
+        async depositDeployment(dseq, amount) {
           assert(akash, 'Client need to be initalized');
           return akash.tx.deployment.deposit.params({
             owner: address,
@@ -81,5 +78,3 @@ export const bootPlugin = () => {
     },
   });
 };
-
-initClient(DEFAULT_MNEMONIC);
