@@ -133,6 +133,7 @@ const start = (zcf) => {
     if (count > maxCheck) {
       console.log('Max check reached, exiting');
       controllerSeat.exit();
+      return;
     }
 
     const currentTs = await E(timeAuthority).getCurrentTimestamp();
