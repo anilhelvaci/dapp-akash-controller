@@ -1,10 +1,10 @@
 // @ts-check
-import { test } from '@agoric/zoe/tools/prepare-test-env-ava.js';
+import '@agoric/zoe/tools/prepare-test-env.js';
+import test from 'ava';
 
 import bundleSource from '@endo/bundle-source';
 
-import { Far } from '@agoric/marshal';
-import { E } from '@agoric/eventual-send';
+import { Far, E } from '@endo/far';
 import { makeIssuerKit, AmountMath } from '@agoric/ertp';
 import buildManualTimer from '@agoric/zoe/tools/manualTimer.js';
 import { assertProposalShape } from '@agoric/zoe/src/contractSupport/index.js';
@@ -47,9 +47,12 @@ const makeFakeAkashClient = (t) => {
         akash.deployment.id,
         'Deposited deployment id did not match watched one',
       );
-      t.is(
+      t.deepEqual(
         amount,
-        `${akash.deployment.value}uakt`,
+        {
+          amount: String(akash.deployment.value),
+          denom: 'uakt'
+        },
         'Deposit amount did not match',
       );
       return Promise.resolve('deposited');
@@ -139,7 +142,7 @@ test('zoe - watch Akash deployment, maxCheck=1, IBC transfer failed', async (t) 
 
   const contractTerms = harden({
     akashClient,
-    timeAuthority: timer,
+    timeAuthority: harden(timer),
     checkInterval: 1n,
     maxCheck: 1,
     deploymentId: akash.deployment.id,
@@ -304,7 +307,7 @@ test('zoe - watch Akash deployment, maxCheck=1, current Fund is sufficient', asy
   await E(seatP).getOfferResult();
 
   // this will ignore depsoiting
-  akashClient.setTestAmount(10_000_000n);
+  akashClient.setTestAmount(100_000_000_000_000n);
   await timer.tick();
 
   console.log('Waiting for payout');

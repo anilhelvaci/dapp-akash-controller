@@ -1,3 +1,5 @@
+/*  eslint-disable */
+
 import { E } from '@agoric/eventual-send';
 import { Far } from '@agoric/marshal';
 import { AmountMath } from '@agoric/ertp';

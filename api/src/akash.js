@@ -3,13 +3,20 @@ import { Akash } from 'akashjs';
 import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing';
 
 const DEFAULT_MNEMONIC =
-  'enlist hip relief stomach skate base shallow young switch frequent cry park';
-const DEFAULT_AKASH_RPC = 'http://rpc.edgenet-1.ewr1.aksh.pw:26657';
+  'flash street nose country hill fix tide ridge humble finish harbor wide';
+const DEFAULT_AKASH_RPC = 'https://rpc.testnet-02.aksh.pw:26657';
 
 const initClient = async (mnemonic, rpcEndpoint) => {
+  console.log({
+    mnemonic,
+    rpcEndpoint
+  })
   const offlineSigner = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
     prefix: 'akash',
   });
+  console.log({
+    offlineSigner
+  })
   const accounts = await offlineSigner.getAccounts();
   const address = accounts[0].address;
 

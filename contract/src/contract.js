@@ -1,9 +1,11 @@
 // @ts-check
+/* eslint-disable */
 import '@agoric/zoe/exported';
+import { E, Far } from '@endo/far';
+import { TimeMath } from '@agoric/time';
 
-import { Far } from '@agoric/marshal';
-import { E } from '@agoric/eventual-send';
-import { assert, details as X } from '@agoric/assert';
+const { details: X } = assert;
+
 import {
   defaultAcceptanceMsg,
   assertProposalShape,
@@ -91,7 +93,7 @@ const start = (zcf) => {
     // register callback for deposited promise
     pendingDeposit = deposited.then(async () => {
       console.log('Transfer completed, checking result...');
-      const remains = await E(transferSeatP).getCurrentAllocation();
+      const remains = await E(transferSeatP).getFinalAllocation();
       const transferOk = AmountMath.isEmpty(remains.Transfer);
 
       if (transferOk) {
@@ -118,7 +120,7 @@ const start = (zcf) => {
   const checkAndFund = async () => {
     // deployment balance type DecCoin
     const balance = await E(akashClient).getDeploymentFund(deploymentId);
-    const amount = BigInt(balance.amount) / 1_000_000_000_000_000_000n;
+    const amount = BigInt(balance.amount) / 1_000_000n;
 
     console.log('Details here', deploymentId, amount, minimalFundThreshold);
 
@@ -137,7 +139,7 @@ const start = (zcf) => {
     }
 
     const currentTs = await E(timeAuthority).getCurrentTimestamp();
-    const checkAfter = currentTs + checkInterval;
+    const checkAfter = TimeMath.addAbsRel(currentTs, checkInterval);
     console.log('Registering next wakeup call at', checkAfter);
 
     E(timeAuthority)
